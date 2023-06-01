@@ -1,0 +1,39 @@
+name: CICD Workflow Template
+
+
+# Define environmental variables
+env: 
+  module: Template Module
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Flows
+on:
+  push:
+    branches: [ develop, staging , main ]
+    paths:
+      - '*'
+  pull_request:
+    branches: [ develop, staging , main ]
+    paths:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  # Checking code quality
+  code_quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+          submodules: recursive
+      - name: Update submodules
+        id: update
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
