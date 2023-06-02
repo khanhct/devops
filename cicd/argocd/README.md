@@ -122,7 +122,7 @@ Access **Settings/Repositories** and connect repo
 
 ### Result:
 
-![Agrocd Connection Result](./images/argocd_repo_connection_result.png)
+![Agrocd Connection Result](./images/agrocd_repo_connection_result.png)
 
 ## Step 3: New argocd app
 ![Argocd-App](./images/argocd_app.png)
