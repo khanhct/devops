@@ -1,0 +1,88 @@
+name: CICD Workflow Template
+
+# Define environmental variables
+env: 
+  module: testflow
+  sonar_project_key: abc123
+  argocd_user: admin
+  argocd_url_dev: 58.186.205.176
+  replica_count: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Events trigger
+on:
+  push:
+    branches: [ develop, staging , main ]
+  pull_request:
+    branches: [ develop, staging , main ]
+  workflow_dispatch:
+
+jobs:
+  # Checking code quality
+  code_quality:
+    name: Code Quality
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+          submodules: recursive
+      - name: Update submodules
+        id: update
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+      - name: Build and analyze
+        working-directory: ./
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet-sonarscanner begin /k:"${{ env.sonar_project_key }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" /d:sonar.pullrequest.key=${{ github.event.number }} /d:sonar.pullrequest.branch="${{github.head_ref}}" /d:sonar.pullrequest.base="${{github.base_ref}}" /d:sonar.pullrequest.provider=github /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+          dotnet build
+          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+  # Run unit test
+  unit_test:
+    name: Running Unittest 
+    runs-on: ubuntu-latest
+    needs: [ code_quality ]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+          submodules: recursive
+      - name: Update submodules
+        id: update
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
+
+  # Building and deploying automatically by trigerring argocd
+  build_and_deploy:
+    name: Trigger to Argocd
+    runs-on: ubuntu-latest
+    needs: [ unit_test ]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+          submodules: recursive
+      - name: Update submodules
+        id: update
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
+      - name: Trigger to Argocd
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.2.5/argocd-linux-amd64 && chmod +x /usr/local/bin/argocd
+          argocd login ${{ env.argocd_url_dev }} --username ${{ env.argocd_user }} --password ${{ secrets.DEV_ARGOCD_SECRET }} --insecure
+          argocd app set app-demo -p replicaCount=${{ env.replica_count }}
