@@ -7,6 +7,5 @@ data:
   policy.default: role:readonly
   policy.csv: |
     p, role:deployment-restart, applications, action/apps/Deployment/restart, default/*, allow
-    g, hanli, role:deployment-restart
-    g, natsu, role:deployment-restart
-    g, lucy, role:deployment-restart
+    g, tester1, role:deployment-restart
+    g, tester2, role:deployment-restart
