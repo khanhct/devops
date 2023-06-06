@@ -130,3 +130,10 @@ Access **Settings/Repositories** and connect repo
 ### Result:
 
 ![Argocd-App-Result](./images/argocd_app_result.png)
+
+## Commands
+```sh
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+argocd login --insecure localhost
+argocd account list
+```

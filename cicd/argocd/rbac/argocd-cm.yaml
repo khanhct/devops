@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: argocd-cm
     app.kubernetes.io/part-of: argocd
 data:
-  url: https://argocd.example.com
+  url: https://58.186.205.176
   # Syntax: accounts.<username>: <capabilities> and capabilities can be <apiKey > or <login>
   accounts.tester1: login
   accounts.tester2: login

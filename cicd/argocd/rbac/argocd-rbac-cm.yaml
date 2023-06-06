@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    p, role:deployment-restart, applications, action/apps/Deployment/restart, default/*, allow
+    g, hanli, role:deployment-restart
+    g, natsu, role:deployment-restart
+    g, lucy, role:deployment-restart
