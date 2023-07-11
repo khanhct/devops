@@ -16,7 +16,7 @@ spec:
       imagePullSecrets:
         - registry-secret
       containers:
-      - image: docker pull reg.fptcompute.com.vn/portal-new/demo-app:32
+      - image: reg.fptcompute.com.vn/portal-new/demo-app:32
         imagePullPolicy: Always
         name: hello-app
         ports:
