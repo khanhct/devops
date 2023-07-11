@@ -14,7 +14,7 @@ spec:
         app: hello-app
     spec:
       imagePullSecrets:
-        - registry-secret
+      - name: registry-secret
       containers:
       - image: reg.fptcompute.com.vn/portal-new/demo-app:32
         imagePullPolicy: Always

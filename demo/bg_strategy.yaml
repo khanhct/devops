@@ -17,7 +17,7 @@ spec:
         app: nginx-green
     spec:
       imagePullSecrets:
-        - registry-secret
+      - name: registry-secret
       containers:
         - name: nginx-container
           image: reg.fptcompute.com.vn/portal-new/demo-app:32
@@ -42,7 +42,7 @@ spec:
         app: nginx-blue
     spec:
       imagePullSecrets:
-        - registry-secret
+        - name: registry-secret
       containers:
         - name: nginx-container
           image: reg.fptcompute.com.vn/portal-new/demo-app:35
