@@ -23,9 +23,20 @@ spec:
       - name: registry-secret
       containers:
         - name: nginx-container
-          image: reg.fptcompute.com.vn/portal-new/demo-app:35
+          image: reg.fptcompute.com.vn/portal-new/demo-app:32
           ports:
             - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/bash", "-c", "sleep 5"]
 
 ---
 apiVersion: v1
