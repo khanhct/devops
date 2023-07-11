@@ -13,8 +13,10 @@ spec:
       labels:
         app: hello-app
     spec:
+      imagePullSecrets:
+        - registry-secret
       containers:
-      - image: gcr.io/google-samples/hello-app:1.0
+      - image: docker pull reg.fptcompute.com.vn/portal-new/demo-app:32
         imagePullPolicy: Always
         name: hello-app
         ports:
@@ -41,7 +43,5 @@ spec:
   ports:
     - port: 81
       targetPort: 8080
-      nodePort: 30001
-      protocol: TCP
   selector:
     app: hello-app
