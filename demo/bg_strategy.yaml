@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sample-deployment-green
-  namespace: demo
+  namespace: demo3
 spec:
   replicas: 1
   strategy:
@@ -28,7 +28,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sample-deployment-blue
-  namespace: demo
+  namespace: demo3
 spec:
   replicas: 1
   strategy:
@@ -48,12 +48,33 @@ spec:
           image: reg.fptcompute.com.vn/portal-new/demo-app:35
           ports:
             - containerPort: 8080
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mywebservice
-  namespace: demo
+  namespace: demo3
 spec:
   selector:
     app: nginx-green

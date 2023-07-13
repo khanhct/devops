@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sample-rolling-strategy
-  namespace: demo
+  namespace: demo3
 spec:
   replicas: 2
   strategy:
@@ -26,6 +26,27 @@ spec:
           image: reg.fptcompute.com.vn/portal-new/demo-app:32
           ports:
             - containerPort: 8080
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
           readinessProbe:
             httpGet:
               path: /
@@ -43,7 +64,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mywebservice
-  namespace: demo
+  namespace: demo3
 spec:
   selector:
     app: rolling-strategy
