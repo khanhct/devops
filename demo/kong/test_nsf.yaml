@@ -1,0 +1,108 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv-volume
+  namespace: lab-demo
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: lab-demo
+  name: nfs-pv-claim
+spec:
+  storageClassName: nfs-delete
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-nfs
+  namespace: lab-demo
+  labels:
+    app: nfs-example
+spec:
+  imagePullSecrets:
+  - name: registry-secret
+  containers:
+    - name: helloworld
+      image: reg.fptcompute.com.vn/portal-new/helloworld:0.1
+      imagePullPolicy: Always
+      ports:
+        - containerPort: 8080
+      env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+      volumeMounts:
+      - mountPath: "/usr/src/app/documents"
+        name: "nfs-pv"
+  volumes:
+  - name: "nfs-pv"
+    persistentVolumeClaim:
+      claimName: "nfs-pv-claim"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-service
+  namespace: lab-demo
+spec:
+  type: LoadBalancer
+  selector:
+    app: nfs-example
+  ports:
+  - port: 8081
+    targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:    
+  name: nfs.prod.khanhct.com 
+  namespace: lab-demo
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: nfs.prod.khanhct.com 
+    http:
+      paths:
+      - backend:
+          service:
+            name: nfs-service
+            port:
+              number: 8081
+        path: /
+        pathType: Prefix

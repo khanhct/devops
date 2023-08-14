@@ -63,7 +63,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mywebservice
+  name:   
   namespace: demo3
 spec:
   selector:

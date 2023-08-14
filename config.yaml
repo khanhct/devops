@@ -1,0 +1,82 @@
+192.168.0.93 master1
+192.168.0.66 master2
+192.168.0.157 master3
+192.168.0.141 worker1
+192.168.0.136 worker2
+192.168.0.80 worker3
+192.168.0.34 worker4
+192.168.0.246 worker5
+
+[all]
+master1  ansible_host=192.168.0.93      ip=192.168.0.93
+master2  ansible_host=192.168.0.66      ip=192.168.0.66
+master3  ansible_host=192.168.0.157      ip=192.168.0.157
+worker1  ansible_host=192.168.0.141      ip=192.168.0.141
+worker2  ansible_host=192.168.0.136      ip=192.168.0.136
+worker3  ansible_host=192.168.0.80      ip=192.168.0.80
+worker4  ansible_host=192.168.0.34      ip=192.168.0.34
+worker5  ansible_host=192.168.0.246      ip=192.168.0.246
+
+[kube-master]
+master1
+master2
+master3
+
+[kube-node]
+worker1
+worker2
+worker3
+worker4
+worker5
+
+[etcd]
+master1
+master2
+master3
+
+[k8s-cluster:children]
+kube-node
+kube-master
+
+[calico-rr]
+
+[vault]
+master1
+master2
+master3
+worker1
+worker2
+worker3
+worker4
+worker5
+
+docker run --rm -it --mount type=bind,source=/root/kubernetes_installation/kubespray/inventory/khanhct-cluster,dst=/inventory \
+  --mount type=bind,source=/root/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
+  --mount type=bind,source=/root/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
+  quay.io/kubespray/kubespray:v2.16.0 bash 
+
+docker run --rm -it --mount type=bind,source=/root/kubernetes_installation/kubespray/inventory/khanhct-cluster,dst=/inventory \
+  --mount type=bind,source=/root/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
+  quay.io/kubespray/kubespray:v2.16.0 bash 
+
+ansible-playbook -i /inventory/host.yaml cluster.yml --user=root --ask-pass --become --ask-become-pass
+
+curl --insecure -sfL https://58.186.205.70:6868/v3/import/m5h5h2fpj27zjvnwt549bp8z5kgq5gr77f9p2hjprc9zfbvxg9wqjr_c-l4rt6.yaml | kubectl delete -f -
+curl --insecure -sfL https://58.186.205.70:6868/v3/import/m5h5h2fpj27zjvnwt549bp8z5kgq5gr77f9p2hjprc9zfbvxg9wqjr_c-l4rt6.yaml | kubectl apply -f -
+
+docker run -d --restart=unless-stopped \
+    -p 80:80 -p 443:443 \
+    rancher/rancher:latest
+
+kubectl get namespace "cattle-system" -o json \
+  | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
+  | kubectl replace --raw /api/v1/namespaces/stucked-namespace/finalize -f -
+
+    kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n  cattle-system
+
+kubectl get namespace cattle-system -o json > cattle-system.json
+kubectl replace --raw "/api/v1/namespaces/cattle-system/finalize" -f ./cattle-system.json
+
+go
+
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n cattle-system

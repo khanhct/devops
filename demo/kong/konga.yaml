@@ -1,0 +1,95 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: konga-prepare
+  namespace: kong
+spec:
+  template:
+    metadata:
+      labels:
+        name: konga-prepare
+        app: konga-prepare
+    spec:
+      containers:
+      - name: konga-prepare
+        image: pantsel/konga
+        env:
+        - name: DB_ADAPTER
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: DB_USER
+          value: kong
+        - name: DB_PASSWORD
+          value: kong
+        - name: DB_DATABASE
+          value: konga
+        - name: DB_PORT
+          value: "5432"
+        - name: KONGA_HOOK_TIMEOUT
+          value: "120000"
+        - name: NODE_ENV
+          value: production
+        - name: TOKEN_SECRET
+          value: some_secret_token
+        command: ["/bin/sh", "-c", "node ./bin/konga.js prepare -a postgres --uri postgresql://kong:kong@postgres:5432/konga"]
+        name: kong-migration
+      restartPolicy: OnFailure
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konga
+  namespace: kong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: konga
+  template:
+    metadata:
+      labels:
+        name: konga
+        app: konga
+    spec:
+      containers:
+      - name: konga
+        image: pantsel/konga
+        env:
+        - name: DB_ADAPTER
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: DB_USER
+          value: kong
+        - name: DB_PASSWORD
+          value: kong
+        - name: DB_DATABASE
+          value: konga
+        - name: DB_PORT
+          value: "5432"
+        - name: KONGA_HOOK_TIMEOUT
+          value: "120000"
+        - name: NODE_ENV
+          value: production
+        - name: TOKEN_SECRET
+          value: some_secret_token
+        ports:
+        - containerPort: 1337
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: konga
+  name: konga-svc
+  namespace: kong
+spec:
+  ports:
+    - protocol: TCP
+      port: 1337
+      targetPort: 1337
+  selector:
+    app: konga

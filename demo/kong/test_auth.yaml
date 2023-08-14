@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-auth
+  namespace: lab-demo
+  labels:
+    app: test-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-auth
+  template:
+    metadata:
+      labels:
+        app: test-auth
+    spec:
+      imagePullSecrets:
+      - name: registry-secret
+      containers:
+      - name: test-auth
+        image: reg.fptcompute.com.vn/portal-new/helloworld:0.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+          - name: MY_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: MY_POD_SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-auth-service
+  namespace: lab-demo
+  labels:
+    app: test-auth
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  selector:
+    app: test-auth

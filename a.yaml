@@ -1,0 +1,58 @@
+
+docker run --rm -it --mount type=bind,source=/root/kubernetes_installation/kubespray/inventory/khanhct-cluster,dst=/inventory \
+  --mount type=bind,source=/root/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
+  quay.io/kubespray/kubespray:v2.16.0 bash 
+
+ansible-playbook -i /inventory/host.yaml cluster.yml --user=root --ask-pass --become --ask-become-pass
+
+vrrp_script haproxy-check {
+    script "killall -0 haproxy"
+    interval 2
+    weight 10
+}
+
+vrrp_instance kubernetes {
+    state MASTER
+    priority 100
+    interface eth0
+    virtual_router_id 61
+    advert_int 2
+    authentication {
+        auth_type AH
+        auth_pass viettq
+    }
+    virtual_ipaddress {
+        192.168.0.10
+    }
+
+    track_script {
+        haproxy-check
+    }
+}
+
+
+vrrp_script haproxy-check {
+    script "killall -0 haproxy"
+    interval 2
+    weight 10
+}
+
+vrrp_instance kubernetes {
+    state BACKUP
+    priority 98
+    interface eth0
+    virtual_router_id 61
+    advert_int 2
+    authentication {
+        auth_type AH
+        auth_pass khanhct
+    }
+    virtual_ipaddress {
+        192.168.0.10
+    }
+
+    track_script {
+        haproxy-check
+    }
+}
+

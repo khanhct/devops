@@ -1,0 +1,122 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: kong
+spec:
+  ports:
+  - name: pgql
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app: postgres
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pg-pv-volume
+  namespace: kong
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: kong
+  name: pg-pv-claim
+spec:
+  storageClassName: nfs-delete
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: kong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_USER
+          value: kong
+        - name: POSTGRES_PASSWORD
+          value: kong
+        - name: POSTGRES_DB
+          value: kong
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        image: postgres:9.5
+        name: postgres
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: pg-persistent-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pg-persistent-storage
+        persistentVolumeClaim:
+          claimName: pg-pv-claim
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrations
+  namespace: kong
+spec:
+  template:
+    metadata:
+      name: kong-migrations
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - kong migrations bootstrap && kong migrations up && kong migrations finish
+        env:
+        - name: KONG_PG_PASSWORD
+          value: kong
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PORT
+          value: "5432"
+        image: kong:3.3
+        name: kong-migrations
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - until timeout 1 bash 9<>/dev/tcp/${KONG_PG_HOST}/${KONG_PG_PORT}; do echo
+          'waiting for db'; sleep 1; done
+        env:
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PORT
+          value: "5432"
+        image: kong:3.3
+        name: wait-for-postgres
+      restartPolicy: OnFailure

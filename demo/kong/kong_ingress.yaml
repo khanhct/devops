@@ -1,0 +1,40 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:    
+  name: kong.prod.khanhct.com 
+  namespace: kong
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: kong.prod.khanhct.com 
+    http:
+      paths:
+      - backend:
+          service:
+            name: kong-proxy
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:    
+  name: konga.prod.khanhct.com 
+  namespace: kong
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: konga.prod.khanhct.com 
+    http:
+      paths:
+      - backend:
+          service:
+            name: konga-svc
+            port:
+              number: 1377
+        path: /
+        pathType: Prefix

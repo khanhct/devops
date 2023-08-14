@@ -1,0 +1,93 @@
+---
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: s3-dataset
+  namespace: lab-demo
+spec:
+  local:
+    type: "COS"
+    accessKeyID: "123456789"
+    secretAccessKey: "WPbuRm7E1dp24W07izP5NZcYrCPDoudMFh2gHvMU"
+    endpoint: "https://ss-hn.fptvds.vn"
+    bucket: "khanhct"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-s3
+  namespace: lab-demo
+  labels:
+    app: s3-example
+    dataset.0.id: "s3-dataset"
+    dataset.0.useas: "mount"
+spec:
+  imagePullSecrets:
+  - name: registry-secret
+  containers:
+    - name: helloworld
+      image: reg.fptcompute.com.vn/portal-new/helloworld:0.1
+      imagePullPolicy: Always
+      ports:
+        - containerPort: 8080
+      env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+      volumeMounts:
+      - mountPath: "/usr/src/app/documents"
+        name: "s3-dataset"
+  volumes:
+  - name: "s3-dataset"
+    persistentVolumeClaim:
+      claimName: "s3-dataset"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-service
+  namespace: lab-demo
+spec:
+  type: LoadBalancer
+  selector:
+    app: s3-example
+  ports:
+  - port: 8081
+    targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:    
+  name: s3.prod.khanhct.com 
+  namespace: lab-demo
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: s3.prod.khanhct.com 
+    http:
+      paths:
+      - backend:
+          service:
+            name: s3-service
+            port:
+              number: 8081
+        path: /
+        pathType: Prefix
