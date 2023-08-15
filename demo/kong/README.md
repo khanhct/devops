@@ -8,6 +8,8 @@ kubectl port-forward -n kong svc/s3-service 8081:8081 --address="0.0.0.0"
 ```
 
 docker build -t helloworld:0.1 ./
+docker image tag helloworld:0.1 localhost:5000/helloworld:0.1
+docker push 192.168.0.210:5000/helloworld:0.1
 docker tag helloworld:0.1 reg.fptcompute.com.vn/portal-new/helloworld:0.2
 docker push reg.fptcompute.com.vn/portal-new/helloworld:0.3
 
